@@ -1,0 +1,15 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+.terraform.lock.hcl
+output-*/
+packer-manifest.json
+.env
+.env.*
+.DS_Store
+.vscode/
