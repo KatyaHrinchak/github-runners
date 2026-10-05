@@ -1,0 +1,32 @@
+receivers:
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      load:
+      network:
+
+exporters:
+  otlphttp:
+    metrics_endpoint: "https://monitoring.us-east-1.amazonaws.com/v1/metrics"
+    tls:
+      insecure: false
+    auth:
+      authenticator: sigv4auth
+
+extensions:
+  sigv4auth:
+    service: "monitoring"
+    region: "us-east-1"
+
+service:
+  extensions:
+    - sigv4auth
+  pipelines:
+    metrics:
+      receivers:
+        - hostmetrics
+      exporters:
+        - otlphttp
