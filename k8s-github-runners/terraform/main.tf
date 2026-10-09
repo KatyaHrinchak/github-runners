@@ -26,6 +26,22 @@ resource "helm_release" "arc" {
   repository = "oci://ghcr.io/actions/actions-runner-controller-charts"
   chart      = "gha-runner-scale-set-controller"
   version    = var.arc_version
+
+  values = [
+    yamlencode({
+      metrics = {
+        controllerManagerAddr = ":8080"
+        listenerAddr          = ":8080"
+        listenerEndpoint      = "/metrics"
+      }
+
+      podAnnotations = {
+        "prometheus.io/scrape" = "true"
+        "prometheus.io/port"   = "8080"
+        "prometheus.io/path"   = "/metrics"
+      }
+    })
+  ]
 }
 
 resource "helm_release" "arc_runner_set" {
@@ -42,6 +58,43 @@ resource "helm_release" "arc_runner_set" {
       githubConfigSecret = kubernetes_secret_v1.github_auth.metadata[0].name
 
       runnerScaleSetName = "arc-runner-set"
+
+      containerMode = { type = "dind" }
+
+      template = {
+        spec = {
+          nodeSelector = {
+            "kubernetes.io/arch" = "amd64"
+          }
+
+          containers = [{
+            name = "runner"
+
+            image = "815756779189.dkr.ecr.us-east-1.amazonaws.com/arc-runner-set:1.1.0"
+
+            imagePullPolicy = "IfNotPresent"
+            command         = ["/home/runner/run.sh"]
+          }]
+        }
+      }
+
+      listenerTemplate = {
+        metadata = {
+          annotations = {
+            "prometheus.io/scrape" = "true"
+            "prometheus.io/port"   = "8080"
+            "prometheus.io/path"   = "/metrics"
+          }
+        }
+
+        spec = {
+          containers = [
+            {
+              name = "listener"
+            }
+          ]
+        }
+      }
 
       minRunners = var.min_runners
       maxRunners = var.max_runners
