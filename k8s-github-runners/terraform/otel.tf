@@ -1,10 +1,33 @@
-data "aws_iam_instance_profile" "k8s" {
-  name = "k8s-ec2-instance-profile"
+data "aws_iam_openid_connect_provider" "eks" {
+  url = data.aws_eks_cluster.arc.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_role" "otel" {
+  name = "task-eks-arc-otel"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = "sts:AssumeRoleWithWebIdentity"
+
+      Principal = {
+        Federated = data.aws_iam_openid_connect_provider.eks.arn
+      }
+
+      Condition = {
+        StringEquals = {
+          "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:arc-systems:otel-arc"
+          "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
 }
 
 resource "aws_iam_role_policy" "otel" {
-  name = "arc-otel-cloudwatch"
-  role = data.aws_iam_instance_profile.k8s.role_name
+  name = "cloudwatch-metrics"
+  role = aws_iam_role.otel.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -59,9 +82,7 @@ resource "helm_release" "otel" {
 
   values = [
     yamlencode({
-      mode        = "deployment"
-      hostNetwork = true
-      dnsPolicy   = "ClusterFirstWithHostNet"
+      mode = "deployment"
 
       image = {
         repository = "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
@@ -75,6 +96,9 @@ resource "helm_release" "otel" {
       serviceAccount = {
         create = true
         name   = "otel-arc"
+        annotations = {
+          "eks.amazonaws.com/role-arn" = aws_iam_role.otel.arn
+        }
       }
 
       service = {
@@ -164,6 +188,10 @@ resource "helm_release" "otel" {
             send_batch_size     = 200
             send_batch_max_size = 200
           }
+
+          metric_start_time = {
+            strategy = "subtract_initial_point"
+          }
         }
 
         exporters = {
@@ -198,7 +226,7 @@ resource "helm_release" "otel" {
 
             metrics = {
               receivers  = ["prometheus"]
-              processors = ["memory_limiter", "batch"]
+              processors = ["memory_limiter", "batch", "metric_start_time"]
               exporters  = ["otlphttp/cloudwatch"]
             }
           }

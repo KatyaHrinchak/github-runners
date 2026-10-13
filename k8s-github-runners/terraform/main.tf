@@ -70,7 +70,7 @@ resource "helm_release" "arc_runner_set" {
           containers = [{
             name = "runner"
 
-            image = "815756779189.dkr.ecr.us-east-1.amazonaws.com/arc-runner-set:1.1.0"
+            image = "815756779189.dkr.ecr.us-east-1.amazonaws.com/arc-runner-set:2.0.0"
 
             imagePullPolicy = "IfNotPresent"
             command         = ["/home/runner/run.sh"]
