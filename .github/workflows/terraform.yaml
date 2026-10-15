@@ -1,0 +1,53 @@
+name: Terraform ARC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-arc-eks
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.3
+
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::815756779189:role/github-actions-arc-terraform
+          aws-region: us-east-1
+
+      - run: terraform init -input=false
+      - run: terraform validate
+      - run: terraform plan -input=false
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-24.04
+    environment: terraform-apply
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.3
+
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::815756779189:role/github-actions-arc-terraform
+          aws-region: us-east-1
+
+      - run: terraform init -input=false
+      - run: terraform apply -input=false -auto-approve
