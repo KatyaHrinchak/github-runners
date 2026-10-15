@@ -4,13 +4,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "runner-image/**"
+      - "k8s-github-runners/runner-image/**"
       - ".github/workflows/runner-image.yaml"
 
   push:
     branches: [main]
     paths:
-      - "runner-image/**"
+      - "k8s-github-runners/runner-image/**"
       - ".github/workflows/runner-image.yaml"
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
           docker build \
             --platform linux/amd64 \
             -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" \
-            ./runner-image
+            .k8s-github-runners/runner-image
 
       - name: Check image
         run: |

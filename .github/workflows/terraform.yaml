@@ -11,6 +11,10 @@ concurrency:
   group: terraform-arc-eks
   cancel-in-progress: false
 
+defaults:
+  run:
+    working-directory: k8s-github-runners/terraform
+
 jobs:
   plan:
     if: github.ref == 'refs/heads/main'
