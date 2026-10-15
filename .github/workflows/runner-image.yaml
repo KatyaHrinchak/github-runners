@@ -1,0 +1,74 @@
+name: Build and Push Runner Image
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "k8s-github-runners/runner-image/**"
+      - ".github/workflows/runner-image.yaml"
+
+  push:
+    branches: [main]
+    paths:
+      - "k8s-github-runners/runner-image/**"
+      - ".github/workflows/runner-image.yaml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 815756779189.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: arc-runner-set
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" \
+            ./k8s-github-runners/runner-image
+
+      - name: Check image
+        run: |
+          docker run --rm \
+            "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" \
+            bash -ec '
+              test "$(whoami)" = "runner"
+              test "$(uname -m)" = "x86_64"
+              /home/runner/bin/Runner.Listener --version
+              docker --version
+              docker buildx version
+              aws --version
+              terraform version
+            '
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::815756779189:role/github-actions-arc-image
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        if: github.event_name == 'push'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push image
+        if: github.event_name == 'push'
+        run: |
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
+
+          echo "Published image: $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" \
+            >> "$GITHUB_STEP_SUMMARY"
