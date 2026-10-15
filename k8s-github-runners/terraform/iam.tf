@@ -60,7 +60,7 @@ resource "aws_iam_role" "image_build" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:KatyaHrinchak/k8s-github-runners:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = "repo:KatyaHrinchak/github-runners:ref:refs/heads/main"
         }
       }
     }]
