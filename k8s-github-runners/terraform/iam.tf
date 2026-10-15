@@ -280,7 +280,8 @@ resource "aws_iam_role_policy" "terraform" {
         Effect = "Allow"
         Action = [
           "ecr:DescribeRepositories",
-          "ecr:DescribeImages"
+          "ecr:DescribeImages",
+          "ecr:ListTagsForResource"
         ]
         Resource = "arn:aws:ecr:us-east-1:815756779189:repository/arc-runner-set"
       }
