@@ -247,13 +247,6 @@ resource "aws_iam_role_policy" "terraform" {
         ]
       },
 
-      # Read the existing runner image repository
-      {
-        Effect   = "Allow"
-        Action   = "ecr:DescribeRepositories"
-        Resource = "arn:aws:ecr:us-east-1:815756779189:repository/arc-runner-set"
-      },
-
       # Manage the ARC dashboard
       {
         Effect = "Allow"
@@ -284,7 +277,42 @@ resource "aws_iam_role_policy" "terraform" {
           "ecr:ListTagsForResource"
         ]
         Resource = "arn:aws:ecr:us-east-1:815756779189:repository/arc-runner-set"
-      }
+      },
+
+      # Manage the runner image build role and policy
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreatePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:SetDefaultPolicyVersion",
+          "iam:DeletePolicy",
+          "iam:ListPolicyTags",
+          "iam:TagPolicy",
+          "iam:UntagPolicy"
+        ]
+        Resource = "arn:aws:iam::815756779189:policy/github-actions-arc-image"
+      },
+
+      # Manage the runner image build role and its policy attachment
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy"
+        ]
+        Resource = "arn:aws:iam::815756779189:role/github-actions-arc-image"
+
+        Condition = {
+          ArnEquals = {
+            "iam:PolicyARN" = "arn:aws:iam::815756779189:policy/github-actions-arc-image"
+          }
+        }
+      },
     ]
   })
 }
