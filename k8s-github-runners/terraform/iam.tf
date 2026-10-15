@@ -60,7 +60,7 @@ resource "aws_iam_role" "image_build" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:KatyaHrinchak/github-runners:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = "repo:KatyaHrinchak@92380648/github-runners@1406081557:ref:refs/heads/main"
         }
       }
     }]
@@ -118,8 +118,8 @@ resource "aws_iam_role" "terraform" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
           "token.actions.githubusercontent.com:sub" = [
-            "repo:KatyaHrinchak/github-runners:ref:refs/heads/main",
-            "repo:KatyaHrinchak/github-runners:environment:terraform-apply"
+            "repo:KatyaHrinchak@92380648/github-runners@1406081557:ref:refs/heads/main",
+            "repo:KatyaHrinchak@92380648/github-runners@1406081557:environment:terraform-apply"
           ]
         }
       }
@@ -262,7 +262,27 @@ resource "aws_iam_role_policy" "terraform" {
           "cloudwatch:PutDashboard",
           "cloudwatch:DeleteDashboards"
         ]
-        Resource = "arn:aws:cloudwatch::815756779189:dashboard/arc-runners-eks"
+        Resource = [
+          "arn:aws:cloudwatch::815756779189:dashboard/arc-runners",
+          "arn:aws:cloudwatch::815756779189:dashboard/arc-runners-eks"
+        ]
+      },
+
+      # List OIDC providers and read the runner image repository
+      {
+        Effect   = "Allow"
+        Action   = "iam:ListOpenIDConnectProviders"
+        Resource = "*"
+      },
+
+      # Read the runner image repository
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:DescribeRepositories",
+          "ecr:DescribeImages"
+        ]
+        Resource = "arn:aws:ecr:us-east-1:815756779189:repository/arc-runner-set"
       }
     ]
   })
