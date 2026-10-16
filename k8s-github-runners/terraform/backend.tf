@@ -12,9 +12,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "terraform-backend-815756779189"
-    key    = "k8s-github-runners/eks/terraform.tfstate"
-    region = "us-east-1"
+    bucket       = "terraform-backend-815756779189"
+    key          = "k8s-github-runners/eks/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 
