@@ -118,6 +118,7 @@ resource "aws_iam_role" "terraform" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
           "token.actions.githubusercontent.com:sub" = [
+            "repo:KatyaHrinchak@92380648/github-runners@1406081557:pull_request",
             "repo:KatyaHrinchak@92380648/github-runners@1406081557:ref:refs/heads/main",
             "repo:KatyaHrinchak@92380648/github-runners@1406081557:environment:terraform-apply"
           ]
